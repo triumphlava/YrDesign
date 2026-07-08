@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "code",
+            "includePath": [
+                "Start",
+                "User",
+                "Library",
+                "bsp"
+            ],
+            "compilerPath": "E:/stm32/f407/data/gcc-arm-none-eabi-10.3-2021.10/bin/arm-none-eabi-gcc.exe",
+            "defines": [
+                "USE_STDPERIPH_DRIVER",
+                "STM32F10X_MD"
+            ]
+        }
+    ],
+    "version": 4
+}

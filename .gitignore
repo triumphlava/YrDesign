@@ -10,7 +10,6 @@
 *.lib
 *.dep
 *.i
-*.s
 
 # Firmware
 *.hex
@@ -32,10 +31,7 @@ DebugConfig/
 *.scvd
 *.uvprojx.bak
 
-#=========================
-# VSCode
-#=========================
-.vscode/
+
 
 #=========================
 # Windows
