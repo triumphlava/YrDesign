@@ -1,4 +1,4 @@
-#include "my_usart.h"
+﻿#include "usart.h"
 #include "stdio.h"
 #include "stdbool.h"
 #include "stdint.h"
@@ -23,14 +23,14 @@ void usart_init(void)
     GPIO_Init(GPIOA, &gpio_init);
 
     USART_InitTypeDef usart_init;
-    usart_init.USART_BaudRate = 9600;
+    usart_init.USART_BaudRate = 38400;
     usart_init.USART_WordLength = USART_WordLength_8b;
     usart_init.USART_StopBits = USART_StopBits_1;
     usart_init.USART_Parity = USART_Parity_No;
     usart_init.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     usart_init.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &usart_init);
-    // // 中断嵌套向量表
+    // // 涓柇宓屽鍚戦噺琛?
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     NVIC_InitTypeDef nvic_init;
     nvic_init.NVIC_IRQChannel = USART1_IRQn; 
@@ -46,11 +46,11 @@ void usart_init(void)
 
 int fputc(int ch, FILE *f)
 {
-    // 等待发送数据寄存器为空
+    // 绛夊緟鍙戦€佹暟鎹瘎瀛樺櫒涓虹┖
     while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
     USART_SendData(USART1, (uint8_t)ch);
     
-    // 如果需要等待发送完成（可选）
+    // 濡傛灉闇€瑕佺瓑寰呭彂閫佸畬鎴愶紙鍙€夛級
     // while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
     return ch;
 }

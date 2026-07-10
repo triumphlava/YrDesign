@@ -4,7 +4,6 @@
 #include "stm32f10x.h"
 #include "stdint.h"
 #include "stdbool.h"
-#include "pid.h"
 
 /* ================================================================
  *  循迹模块 (Line Tracking)

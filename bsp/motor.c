@@ -1,5 +1,5 @@
 ﻿#include "motor.h"
-#include "my_pwm.h"
+#include "pwm.h"
 
 void motor_set_direction(uint8_t motor, uint8_t dir);
 void motor_set_pwm(uint8_t motor, uint16_t duty);
@@ -111,5 +111,6 @@ void motor_stop(uint8_t motor)
         pwm_set_duty_ch2(0);
     }
 }
+
 
 

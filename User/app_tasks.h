@@ -4,6 +4,7 @@
 #include "stdint.h"
 
 void app_scheduler_tick(void);
+void app_tasks_init(void);
 
 extern volatile uint8_t g_tracking_flag;
 extern volatile uint8_t g_button_flag;

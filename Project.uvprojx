@@ -337,7 +337,7 @@
               <MiscControls></MiscControls>
               <Define>USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\bsp;.\Start;.\User;.\Library;.\bsp</IncludePath>
+              <IncludePath>.\bsp;.\Start;.\User;.\Library;.\bsp;.\driver</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -657,21 +657,6 @@
               <FilePath>.\User\main.c</FilePath>
             </File>
             <File>
-              <FileName>stm32f10x_conf.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\stm32f10x_conf.h</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f10x_it.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\stm32f10x_it.c</FilePath>
-            </File>
-            <File>
-              <FileName>stm32f10x_it.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\stm32f10x_it.h</FilePath>
-            </File>
-            <File>
               <FileName>app_tasks.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\User\app_tasks.c</FilePath>
@@ -680,11 +665,6 @@
               <FileName>button_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\User\button_task.c</FilePath>
-            </File>
-            <File>
-              <FileName>pid.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\pid.c</FilePath>
             </File>
             <File>
               <FileName>tracking.c</FileName>
@@ -717,19 +697,39 @@
               <FilePath>.\bsp\motor.c</FilePath>
             </File>
             <File>
-              <FileName>my_pwm.c</FileName>
+              <FileName>grayscale_sensor.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\bsp\my_pwm.c</FilePath>
+              <FilePath>.\bsp\grayscale_sensor.c</FilePath>
             </File>
             <File>
-              <FileName>my_tim.c</FileName>
+              <FileName>pwm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\bsp\my_tim.c</FilePath>
+              <FilePath>.\bsp\pwm.c</FilePath>
             </File>
             <File>
-              <FileName>my_usart.c</FileName>
+              <FileName>tim.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\bsp\my_usart.c</FilePath>
+              <FilePath>.\bsp\tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\bsp\usart.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>driver</GroupName>
+          <Files>
+            <File>
+              <FileName>sensor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\driver\sensor.c</FilePath>
+            </File>
+            <File>
+              <FileName>ganv_sensor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\driver\ganv_sensor.c</FilePath>
             </File>
           </Files>
         </Group>

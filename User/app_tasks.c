@@ -1,9 +1,15 @@
 ﻿#include "app_tasks.h"
-#include "my_tim.h"
+#include "tim.h"
 #include "tracking.h"
 #include "button_task.h"
 #include "motor.h"
 #include "button.h"
+
+void app_tasks_init(void)
+{
+    tim_register_callback(app_scheduler_tick);
+}
+
 /**
  * @brief  Software scheduler tick — called every 1ms from TIM2 IRQ.
  *         Dispatches time-triggered tasks based on sys_tick_ms.
@@ -33,3 +39,4 @@ void app_scheduler_tick(void)
         button_scan();              /* 按键: 状态机 (User/button_task.c) */
     }
 }
+
