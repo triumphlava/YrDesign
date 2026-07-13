@@ -2,7 +2,7 @@
 #include "button.h"
 #include "led.h"
 #include "delay.h"
-
+#include "tracking.h"
 extern button_t button[2];
 
 /* ================================================================
@@ -16,7 +16,7 @@ static void button1_single_task(void);
 static void button2_single_task(void);
 static void button1_long_press_task(void);
 static void button2_long_press_task(void);
-
+int mission = 0;
 
 void button_task(void)
 {
@@ -44,13 +44,12 @@ void button_task(void)
 
 static void button1_single_task(void)
 {
-    // led 闪烁3次
-
+    mission = mission == 9 ? 0 : mission + 1;
 }
 
 static void button2_single_task(void)
 {
-
+    nav_start(mission);
 }
 
 static void button1_long_press_task(void)

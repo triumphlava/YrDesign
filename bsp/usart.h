@@ -7,6 +7,12 @@ void usart_init(void);
 void usart_send_byte(uint8_t data);
 void usart_send_string(const char* str);
 
+void usart2_init(void);
+void usart2_send_byte(uint8_t data);
+void usart2_send_string(const char* str);
+
+
+
 #endif  
 
 

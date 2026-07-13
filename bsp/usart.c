@@ -1,4 +1,4 @@
-﻿#include "usart.h"
+#include "usart.h"
 #include "stdio.h"
 #include "stdbool.h"
 #include "stdint.h"
@@ -30,7 +30,7 @@ void usart_init(void)
     usart_init.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     usart_init.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &usart_init);
-    // // 涓柇宓屽鍚戦噺琛?
+    // // �?��嵌�?向量�?
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     NVIC_InitTypeDef nvic_init;
     nvic_init.NVIC_IRQChannel = USART1_IRQn; 
@@ -46,11 +46,11 @@ void usart_init(void)
 
 int fputc(int ch, FILE *f)
 {
-    // 绛夊緟鍙戦€佹暟鎹瘎瀛樺櫒涓虹┖
+    // 等待发送数�?��存器为空
     while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
     USART_SendData(USART1, (uint8_t)ch);
     
-    // 濡傛灉闇€瑕佺瓑寰呭彂閫佸畬鎴愶紙鍙€夛級
+    // 如果需要等待发送完成（�?��）
     // while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
     return ch;
 }
@@ -60,11 +60,11 @@ void USART1_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET)
     {
-        uint8_t data = USART_ReceiveData(USART1);
-        usart_rx_buffer[usart_rx_index] = data;
-        usart_rx_index++;
-        if (data == '\n')
-            usart_rx_complete = true;
+        // uint8_t data = USART_ReceiveData(USART1);
+        // usart_rx_buffer[usart_rx_index] = data;
+        // usart_rx_index++;
+        // if (data == '\n')
+        //     usart_rx_complete = true;
     }
 }
 
@@ -86,5 +86,66 @@ void usart_send_string(const char* str)
     }
 }
 
+void usart2_init(void)
+{
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+    GPIO_InitTypeDef gpio_init;
+    gpio_init.GPIO_Pin = GPIO_Pin_2; 
+    gpio_init.GPIO_Mode = GPIO_Mode_AF_PP; 
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &gpio_init);
 
+    gpio_init.GPIO_Pin = GPIO_Pin_3; 
+    gpio_init.GPIO_Mode = GPIO_Mode_IPU; 
+    GPIO_Init(GPIOA, &gpio_init);
+
+    USART_InitTypeDef usart_init;
+    usart_init.USART_BaudRate = 38400;
+    usart_init.USART_WordLength = USART_WordLength_8b;
+    usart_init.USART_StopBits = USART_StopBits_1;
+    usart_init.USART_Parity = USART_Parity_No;
+    usart_init.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    usart_init.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    USART_Init(USART2, &usart_init);
+    // //?嵌?向量?
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+    NVIC_InitTypeDef nvic_init;
+    nvic_init.NVIC_IRQChannel = USART2_IRQn; 
+    nvic_init.NVIC_IRQChannelCmd = ENABLE;
+    nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+    nvic_init.NVIC_IRQChannelSubPriority = 1;
+    NVIC_Init(&nvic_init);
+
+    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
+
+    USART_Cmd(USART2, ENABLE);
+}
+
+void usart2_send_byte(uint8_t data)
+{
+    USART_SendData(USART2, data);
+    while(USART_GetFlagStatus(USART2, USART_FLAG_TC) == 0);
+}
+
+void usart2_send_string(const char* str)
+{
+    while(*str)
+    {
+        usart2_send_byte(*str);
+        str++;
+    }
+}
+
+void USART2_IRQHandler(void)
+{
+    if(USART_GetFlagStatus(USART2, USART_FLAG_RXNE) != RESET)
+    {
+        uint8_t data = USART_ReceiveData(USART2);
+        usart_rx_buffer[usart_rx_index] = data;
+        usart_rx_index++;
+        if (data == 'z')
+            usart_rx_complete = true;
+    }
+}
 

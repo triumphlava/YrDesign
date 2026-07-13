@@ -2,11 +2,7 @@
 
 void pwm_init(void)
 {
-    /* 寮€鍚椂閽?*/
-    RCC_APB2PeriphClockCmd(
-        RCC_APB2Periph_GPIOA |
-        RCC_APB2Periph_TIM1,
-        ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA |RCC_APB2Periph_TIM1,ENABLE);
 
     /* PA8(TIM1_CH1)銆丳A11(TIM1_CH4) */
     GPIO_InitTypeDef gpio_init;
@@ -19,7 +15,6 @@ void pwm_init(void)
     gpio_init.GPIO_Pin = GPIO_Pin_11;
     GPIO_Init(GPIOA, &gpio_init);
 
-    /* TIM1鏃跺熀閰嶇疆 */
     TIM_TimeBaseInitTypeDef tim_init;
     tim_init.TIM_Prescaler         = 7200 - 1;
     tim_init.TIM_Period            = 200 - 1;
@@ -29,7 +24,6 @@ void pwm_init(void)
 
     TIM_TimeBaseInit(TIM1, &tim_init);
 
-    /* PWM閰嶇疆 */
     TIM_OCInitTypeDef oc_init;
     TIM_OCStructInit(&oc_init);
 
@@ -38,11 +32,13 @@ void pwm_init(void)
     oc_init.TIM_OCPolarity  = TIM_OCPolarity_High;
 
     /* CH1(PA8) */
-    oc_init.TIM_Pulse = 100;      // 50%鍗犵┖姣?    TIM_OC1Init(TIM1, &oc_init);
+    oc_init.TIM_Pulse = 100;      // 50%鍗犵┖姣?    
+    TIM_OC1Init(TIM1, &oc_init);
     TIM_OC1PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
     /* CH4(PA11) */
-    oc_init.TIM_Pulse = 100;      // 50%鍗犵┖姣?    TIM_OC4Init(TIM1, &oc_init);
+    oc_init.TIM_Pulse = 100;      // 50%鍗犵┖姣?    
+    TIM_OC4Init(TIM1, &oc_init);
     TIM_OC4PreloadConfig(TIM1, TIM_OCPreload_Enable);
 
     /* ARR棰勮杞?*/

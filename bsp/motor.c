@@ -19,6 +19,8 @@ void motor_init(void)
     GPIO_ResetBits(GPIOB, GPIO_Pin_14 | GPIO_Pin_15);
 }
 
+#define LEFT_MOTOR_COMPENSATION 91    // 91%
+
 void motor_set_speed(int16_t left_speed, int16_t right_speed)
 {
     uint16_t duty;
@@ -32,13 +34,13 @@ void motor_set_speed(int16_t left_speed, int16_t right_speed)
     if (left_speed > 0)
     {
         motor_set_direction(MOTOR_LEFT, MOTOR_FORWARD);
-        duty = left_speed;
+        duty = (uint16_t)(left_speed * LEFT_MOTOR_COMPENSATION / 100);
         motor_set_pwm(MOTOR_LEFT, duty);
     }
     else if (left_speed < 0)
     {
         motor_set_direction(MOTOR_LEFT, MOTOR_BACKWARD);
-        duty = -left_speed;
+        duty = (uint16_t)((-left_speed) * LEFT_MOTOR_COMPENSATION / 100);
         motor_set_pwm(MOTOR_LEFT, duty);
     }
     else

@@ -28,7 +28,7 @@ void app_scheduler_tick(void)
     uint32_t now = sys_tick_ms;
 
     /* ---- 5ms 循迹任务 ---- */
-    if (now - last_5ms >= 5) {
+    if (now - last_5ms >= 3) {
         last_5ms = now;
         tracking_update();          /* 循迹: 传感器 → PID → motor_set_speed() */
     }
