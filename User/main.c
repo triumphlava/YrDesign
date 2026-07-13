@@ -21,6 +21,7 @@ extern uint8_t usart_rx_buffer[128];
 extern volatile uint8_t usart_rx_index;
 extern bool usart_rx_complete;
 
+
 void usart_process(void){;}
 
 int main(void)

@@ -40,3 +40,4 @@ void app_scheduler_tick(void)
     }
 }
 
+//状态机  循迹   总体的结构

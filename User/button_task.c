@@ -3,6 +3,8 @@
 #include "led.h"
 #include "delay.h"
 
+extern button_t button[2];
+
 /* ================================================================
  *  非阻塞按键任务 — 每 10ms 由调度器调用
  *
@@ -18,7 +20,7 @@ static void button2_long_press_task(void);
 
 void button_task(void)
 {
-    if (button[0].single) 
+    if (button[0].single == 1) 
     {
         button[0].single = 0;  
         button1_single_task(); 
@@ -42,7 +44,8 @@ void button_task(void)
 
 static void button1_single_task(void)
 {
-    
+    // led 闪烁3次
+
 }
 
 static void button2_single_task(void)

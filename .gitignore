@@ -56,13 +56,3 @@ Desktop.ini
 *.bak
 *.old
 *~
- 
- #=========================
- # IDE / Editor
- #=========================
- .vscode/
- 
- #=========================
- # J-Link Debug Settings
- #=========================
- JLinkSettings.ini
