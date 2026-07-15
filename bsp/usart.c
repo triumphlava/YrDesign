@@ -60,11 +60,11 @@ void USART1_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET)
     {
-        // uint8_t data = USART_ReceiveData(USART1);
-        // usart_rx_buffer[usart_rx_index] = data;
-        // usart_rx_index++;
-        // if (data == '\n')
-        //     usart_rx_complete = true;
+        uint8_t data = USART_ReceiveData(USART1);
+        usart_rx_buffer[usart_rx_index] = data;
+        usart_rx_index++;
+        if (data == '\n')
+            usart_rx_complete = true;
     }
 }
 
@@ -141,11 +141,11 @@ void USART2_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART2, USART_FLAG_RXNE) != RESET)
     {
-        uint8_t data = USART_ReceiveData(USART2);
-        usart_rx_buffer[usart_rx_index] = data;
-        usart_rx_index++;
-        if (data == 'z')
-            usart_rx_complete = true;
+        // uint8_t data = USART_ReceiveData(USART2);
+        // usart_rx_buffer[usart_rx_index] = data;
+        // usart_rx_index++;
+        // if (data == '\n')
+        //     usart_rx_complete = true;
     }
 }
 

@@ -1,13 +1,14 @@
 ﻿#include "sensor.h"
 #include "ganv_sensor.h"
 #include "grayscale_sensor.h"
+#include "usart.h"
 
 
 static No_MCU_Sensor sensor;
 
 /* 前人的校准值 */
-static const unsigned short white_ref[8] = {3051, 3216, 3290, 3249, 3217, 3013, 3216, 2758};
-static const unsigned short black_ref[8] = {135, 996, 1202, 1416, 1416, 896, 1593, 353};
+static const unsigned short white_ref[8] = {3191, 3265, 3355, 3305, 3284, 3169, 3286, 2902};
+static const unsigned short black_ref[8] = {986, 1332, 1766, 1672, 1680, 1460, 2048, 778};
 
 void Sensor_Init(void)
 {
@@ -22,4 +23,31 @@ void Sensor_Scan(uint8_t *digital)
 
     for (int i = 0; i < 8; i++)
         digital[i] = (d >> i) & 1;
+}
+
+
+#if SENSOR_CALIB
+static void print_u16(uint16_t v)
+{
+    char s[6]; uint8_t i = 4; s[5] = ' ';
+    do { s[i--] = '0' + (v % 10); v /= 10; } while (v);
+    for (uint8_t j = i + 1; j < 6; j++) usart2_send_byte(s[j]);
+}
+#endif
+
+void Sensor_CalibOutput(void)
+{
+#if SENSOR_CALIB
+    unsigned short analog[8];
+    // Get_Anolog_Value(&sensor, analog);
+
+    // for (int i = 0; i < 8; i++) print_u16(analog[i]);
+    // usart2_send_string("\r\n");
+
+    uint8_t d[8];
+    Sensor_Scan(d);
+    for (int i = 0; i < 8; i++)
+        usart2_send_byte(((d[i]) & 1) ? '1' : '0');
+    usart2_send_string("\r\n");
+#endif
 }

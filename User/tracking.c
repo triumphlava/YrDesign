@@ -1,4 +1,4 @@
-﻿#include "tracking.h"
+#include "tracking.h"
 #include "motor.h"
 #include "sensor.h"
 #include "led.h"
@@ -27,7 +27,7 @@ uint8_t  P_GAIN       =    2;      /* 误差→转向的 P 增益，越大拐越
 
 /* ---- 掉头 180° ---- */
 #define  BACK_SPEED        25      /* 180° 掉头的旋转速度 */
-#define  BACK_TIME       900     /* 180° 掉头：~1.0圈，估计值，实测调 */
+#define  BACK_TIME       1200     /* 180° 掉头：~1.0圈，估计值，实测调 */
 #define  SETTLE_MS        200      /* 掉头/拐弯后等车身稳定（ms） */
 
 /* ---- 停顿 ---- */
@@ -62,7 +62,8 @@ static uint8_t path_len;        /* 路径总长度（几个路口） */
 static uint8_t prev_count;      /* 上一次在线传感器数，检测路口上升沿 */
 static uint8_t crossed;         /* 返回路上经过的路口数 */
 static uint32_t timer;          /* 时间戳 */
-
+static uint8_t finish_return_flag = 0;
+static uint32_t finish_timer = 0;
 /* ===== 公开接口 ===== */
 
 void nav_start(uint8_t room)
@@ -104,46 +105,49 @@ static int16_t line_err(int16_t *sensor_count)
     return sum / *sensor_count;
 }
 
-
+extern volatile bool finish_line_detected ;
 /* 判断是否检测到终点标志 */
 static uint8_t is_finish_mark(void)
 {
-    uint8_t bits = 0;
-    bits |= (tracking_sensor[0] == 0) << 0;
-    bits |= (tracking_sensor[1] == 0) << 1;
-    bits |= (tracking_sensor[2] == 0) << 2;
-    bits |= (tracking_sensor[3] == 0) << 3;
-    bits |= (tracking_sensor[4] == 0) << 4;
-    bits |= (tracking_sensor[5] == 0) << 5;
-    bits |= (tracking_sensor[6] == 0) << 6;
-    bits |= (tracking_sensor[7] == 0) << 7;
     
-    switch(bits)
-    {
-        case 0x88:  // 01110111
-        case 0x66:  // 10011001
-        case 0x11:  // 11101110
-        case 0xE3:  // 00111011 / 11111100
-        case 0x62:  // 10111001
-        case 0x9C:  // 11000110 (修正！)
-        case 0xCC:  // 11001100
-        case 0x52:  // 10111011 (修正！)
-        case 0xE6:  // 10110011
-        case 0x4C:  // 11001110
-        case 0x39:  // 01100111
-        case 0xF3:  // 00110011
-        case 0xF1:  // 01110011
-        case 0x3C:  // 11100110
-        case 0xC6:  // 10011110 / 10011111
-        case 0x63:  // 00111001 (新增！)
-        case 0xB1:  // 01111011 (新增！)
-        case 0x03:  // 00111111
-        case 0x9F:  // 11111001
-        case 0xBF:  // 11111101
-            return 1;
-        default:
-            return 0;
-    }
+    return finish_line_detected;
+
+    // uint8_t bits = 0;
+    // bits |= (tracking_sensor[0] == 0) << 0;
+    // bits |= (tracking_sensor[1] == 0) << 1;
+    // bits |= (tracking_sensor[2] == 0) << 2;
+    // bits |= (tracking_sensor[3] == 0) << 3;
+    // bits |= (tracking_sensor[4] == 0) << 4;
+    // bits |= (tracking_sensor[5] == 0) << 5;
+    // bits |= (tracking_sensor[6] == 0) << 6;
+    // bits |= (tracking_sensor[7] == 0) << 7;
+    
+    // switch(bits)
+    // {
+    //     case 0x88:  // 01110111
+    //     case 0x66:  // 10011001
+    //     case 0x11:  // 11101110
+    //     case 0xE3:  // 00111011 / 11111100
+    //     case 0x62:  // 10111001
+    //     case 0x9C:  // 11000110 (修正！)
+    //     case 0xCC:  // 11001100
+    //     case 0x52:  // 10111011 (修正！)
+    //     case 0xE6:  // 10110011
+    //     case 0x4C:  // 11001110
+    //     case 0x39:  // 01100111
+    //     case 0xF3:  // 00110011
+    //     case 0xF1:  // 01110011
+    //     case 0x3C:  // 11100110
+    //     case 0xC6:  // 10011110 / 10011111
+    //     case 0x63:  // 00111001 (新增！)
+    //     case 0xB1:  // 01111011 (新增！)
+    //     case 0x03:  // 00111111
+    //     case 0x9F:  // 11111001
+    //     case 0xBF:  // 11111101
+    //         return 1;
+    //     default:
+    //         return 0;
+    // }
 }
 
 
@@ -199,32 +203,37 @@ void tracking_update(void)
         /* ===== 空闲 ===== */
         case IDLE:
             motor_set_speed(0, 0);
+            led_off();
             break;
 
         /* ===== 前进：沿线走，到路口时查路径表 ===== */
+/* ===== 前进：沿线走 ===== */
         case FWD:
-        if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
+
+            if (route[target][path_idx] == PATH_END)
+            {
+                path_idx = 0;
+                timer = now;       // 重新计时，作为进入 FIND_ROOM 的盲区保护起点
+                state = FIND_ROOM; // 切换状态
+                break;             // 退出当前周期
+            }
+
+            if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
             {
                 uint8_t cmd = route[target][path_idx];
-
-                if (cmd == PATH_END)
-                {
-                    path_idx = 0;
-                    timer = now;
-                    state = FIND_ROOM;
-                    break;
-                }
 
                 if (cmd != TURN_STRAIGHT)
                 {
                     timer = now;
-                    state = TURNING;
+                    state = TURNING; // 准备去拐弯
                     break;
                 }
 
-                path_idx++;
+                // 如果是直行指令 (TURN_STRAIGHT)
+                path_idx++; 
+                timer = now + 300; // 直行通过路口后，同样给 300ms 稳定期防止二次触发
             }
-            prev_count = sensor_count;
+            
             motor_set_speed(left, right);
             break;
 
@@ -247,16 +256,30 @@ void tracking_update(void)
 
         /* ===== 找病房：慢速走到线末端 ===== */
         case FIND_ROOM:
-            if (is_finish_mark())
+		{
+            static bool flag = 0;
+            if (flag )
             {
-                motor_set_speed(0, 0);
+                if (now - timer >= 800)
+                {
+                    flag = 0;
+                    motor_set_speed(0, 0);
+                    
+                    led_on();
+                    state = PAUSE;
+                    break;
+                }
+            }
+            if (!flag && is_finish_mark())
+            {
+                flag = 1;
                 timer = now;
-                state = PAUSE;
-                break;
+                led_on();
+                finish_line_detected = 0;  
             }
             motor_set_speed(left_slow, right_slow);
             break;
-
+		}
         /* ===== 到病房：停400ms ===== */
         case PAUSE:
             if (now - timer >= PAUSE_MS)
@@ -273,43 +296,77 @@ void tracking_update(void)
                 timer = now + SETTLE_MS;
                 state = RETURN;
             }
+            finish_line_detected = 0;
             break;
 
         /* ===== 返回：原路返回，方向取反 ===== */
-    case RETURN:
+        case RETURN:
 
-        if (now < timer)
-            break;
+            if (now < timer)
+                break;
 
-        /* 已完成所有返回拐弯，检测到终点停止 */
-        if (crossed >= path_len)
-        {
-            if (is_finish_mark())
-                {
-                    motor_set_speed(0,0);
-                    state = IDLE;
-                }
-            motor_set_speed(left, right);
-            break;
-        }
-        if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
-        {
-            uint8_t fwd_cmd = route[target][path_len - 1 - crossed];
-            uint8_t ret_cmd = reverse_turn(fwd_cmd);
-            crossed++;
 
-            if (ret_cmd != TURN_STRAIGHT)
+            /* ===== 返回终点检测 ===== */
+            if (crossed >= path_len)
             {
-                timer = now;
-                state = RET_TURN;
+                if (is_finish_mark())
+                {
+                    if (!finish_return_flag)
+                    {
+                        finish_return_flag = 1;
+                        finish_timer = now;
+                        motor_set_speed(left, right);
+                    }
+                    else
+                    {
+                        /* 终点线持续1.5s */
+                        if (now - finish_timer >= 800)
+                        {
+                            motor_set_speed(0,0);
+                            state = IDLE;
+                            finish_return_flag = 0;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    finish_return_flag = 0;
+                }
+
+
+                motor_set_speed(left, right);
+                prev_count = sensor_count;
                 break;
             }
-        }
 
-        prev_count = sensor_count;
-        motor_set_speed(left, right);
-        break;
 
+
+            /* ===== 返回经过路口 ===== */
+            if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
+            {
+                uint8_t fwd_cmd = route[target][path_len - 1 - crossed];
+                uint8_t ret_cmd = reverse_turn(fwd_cmd);
+
+                crossed++;
+
+
+                if (ret_cmd != TURN_STRAIGHT)
+                {
+                    timer = now;
+                    state = RET_TURN;
+
+                    prev_count = sensor_count;
+                    break;
+                }
+            }
+
+
+            prev_count = sensor_count;
+
+            motor_set_speed(left, right);
+
+            break;        
         /* ===== 返回途中拐弯（方向与去的时候相反） ===== */
         case RET_TURN:
         {
@@ -323,8 +380,6 @@ void tracking_update(void)
             {
                 timer = now;
                 state = RETURN;
-
-
                 motor_set_speed(0, 0);
             }
             break;
