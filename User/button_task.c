@@ -49,6 +49,8 @@ static void button1_single_task(void)
 
 static void button2_single_task(void)
 {
+    if (mission == 4)
+        led_on();
     nav_start(mission);
 }
 

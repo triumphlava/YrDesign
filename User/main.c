@@ -39,8 +39,9 @@ int main(void)
 	while (1)
 	{
 		button_task();
-		usart_process();
-		// motor_set_speed(20, 20); 
+		usart_process();	
+        
+		// motor_set_speed(5, 35); 
 	}
 }
 
@@ -91,7 +92,11 @@ void usart_process(void)
 			if (finish_cnt < 2)
 				finish_cnt++;
 
-			if (finish_cnt == 2)
+			if (finish_cnt == 1)
+            {
+                finish_line_detected = true;
+                finish_cnt = 0;      // 如果希望再次连续5次还能触发
+            }
 			{
 				/* TODO: 连续收到5次 FinishLine 后执行 */
 				finish_line_detected = true;
@@ -110,3 +115,5 @@ void usart_process(void)
         usart_rx_complete = false;
     }
 }
+
+

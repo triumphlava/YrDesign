@@ -19,16 +19,18 @@ void motor_init(void)
     GPIO_ResetBits(GPIOB, GPIO_Pin_14 | GPIO_Pin_15);
 }
 
-#define LEFT_MOTOR_COMPENSATION 91    // 91%
+#define LEFT_MOTOR_COMPENSATION 85    // 85%
 
 void motor_set_speed(int16_t left_speed, int16_t right_speed)
 {
+
+
     uint16_t duty;
 
     /*---------------- 左电机 ----------------*/
     if (left_speed > 100)
         left_speed = 100;
-    if (left_speed < -100)
+    if (left_speed < -100)  
         left_speed = -100;
 
     if (left_speed > 0)

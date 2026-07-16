@@ -7,8 +7,8 @@
 static No_MCU_Sensor sensor;
 
 /* 前人的校准值 */
-static const unsigned short white_ref[8] = {3191, 3265, 3355, 3305, 3284, 3169, 3286, 2902};
-static const unsigned short black_ref[8] = {986, 1332, 1766, 1672, 1680, 1460, 2048, 778};
+static const unsigned short white_ref[8] = {3182, 3278, 3337, 3301, 3270, 3166, 3285, 2994};
+static const unsigned short black_ref[8] = {1196, 1485, 1996, 1814, 1742, 1479, 2212, 1122};
 
 void Sensor_Init(void)
 {
@@ -39,15 +39,15 @@ void Sensor_CalibOutput(void)
 {
 #if SENSOR_CALIB
     unsigned short analog[8];
-    // Get_Anolog_Value(&sensor, analog);
+    Get_Anolog_Value(&sensor, analog);
 
-    // for (int i = 0; i < 8; i++) print_u16(analog[i]);
-    // usart2_send_string("\r\n");
-
-    uint8_t d[8];
-    Sensor_Scan(d);
-    for (int i = 0; i < 8; i++)
-        usart2_send_byte(((d[i]) & 1) ? '1' : '0');
+    for (int i = 0; i < 8; i++) print_u16(analog[i]);
     usart2_send_string("\r\n");
+
+    // uint8_t d[8];
+    // Sensor_Scan(d);
+    // for (int i = 0; i < 8; i++)
+    //     usart2_send_byte(((d[i]) & 1) ? '1' : '0');
+    // usart2_send_string("\r\n");
 #endif
 }
