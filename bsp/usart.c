@@ -8,9 +8,7 @@
 uint8_t usart_rx_buffer[128];
 volatile uint8_t usart_rx_index = 0;
 bool usart_rx_complete = false;
-// for vision 
-// PA9 -> TX
-// PA10 -> RX
+
 void usart_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
@@ -50,14 +48,11 @@ void usart_init(void)
 
 int fputc(int ch, FILE *f)
 {
-    // 等待发送缓冲区为空
     while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
     USART_SendData(USART1, (uint8_t)ch);
     return ch;
 }
 
-//  m:2\r\n
-//  FinishLine\r\n
 void USART1_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET)
@@ -92,9 +87,6 @@ void usart_send_string(const char* str)
 }
 
 
-// for bluetooth debugging
-// PA2 -> TX
-// PA3 -> RX
 void usart2_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -151,11 +143,7 @@ void USART2_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART2, USART_FLAG_RXNE) != RESET)
     {
-        // uint8_t data = USART_ReceiveData(USART2);
-        // usart_rx_buffer[usart_rx_index] = data;
-        // usart_rx_index++;
-        // if (data == '\n')
-        //     usart_rx_complete = true;
+
     }
 }
 

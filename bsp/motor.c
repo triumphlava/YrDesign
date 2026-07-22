@@ -4,7 +4,6 @@
 void motor_set_direction(uint8_t motor, uint8_t dir);
 void motor_set_pwm(uint8_t motor, uint16_t duty);
 
-
 void motor_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
@@ -15,7 +14,6 @@ void motor_init(void)
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOB, &gpio_init);
 
-    /* 初始状态：所有电机停止 */
     GPIO_ResetBits(GPIOB, GPIO_Pin_12 | GPIO_Pin_13);
     GPIO_ResetBits(GPIOB, GPIO_Pin_14 | GPIO_Pin_15);
 }
@@ -26,8 +24,6 @@ void motor_set_speed(int16_t left_speed, int16_t right_speed)
 {
     uint16_t duty;
 
-    /*---------------- 左电机（实际处理右电机的参数） ----------------*/
-    // 注意：这里处理的是 right_speed，但操作 MOTOR_LEFT 的硬件
     if (right_speed > 100)
         right_speed = 100;
     if (right_speed < -100)  
@@ -50,8 +46,6 @@ void motor_set_speed(int16_t left_speed, int16_t right_speed)
         motor_stop(MOTOR_LEFT);
     }
 
-    /*---------------- 右电机（实际处理左电机的参数） ----------------*/
-    // 注意：这里处理的是 left_speed，但操作 MOTOR_RIGHT 的硬件
     if (left_speed > 100)
         left_speed = 100;
     if (left_speed < -100)

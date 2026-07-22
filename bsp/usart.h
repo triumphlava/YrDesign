@@ -11,9 +11,7 @@ void usart2_init(void);
 void usart2_send_byte(uint8_t data);
 void usart2_send_string(const char* str);
 
-
-
-#endif  
+#endif
 
 
 

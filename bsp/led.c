@@ -14,7 +14,6 @@ void led_init(void)
     GPIO_ResetBits(GPIOC , GPIO_Pin_13);
 }
 
-
 void led_on(void)
 {
     GPIO_ResetBits(GPIOC , GPIO_Pin_13);
@@ -24,11 +23,6 @@ void led_off(void)
 {
     GPIO_SetBits(GPIOC , GPIO_Pin_13);
 }
-
-
-
-
-
 
 void led_toggle(void)
 {
