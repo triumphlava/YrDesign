@@ -7,6 +7,8 @@ void tim_register_callback(tim_callback_t cb) { sched_cb = cb; }
 
 volatile uint32_t sys_tick_ms = 0;
  
+
+// 系统的定时器初始化，使用 TIM2 作为系统滴答定时器
 void tim_init(void)
 {
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2 , ENABLE);
@@ -22,8 +24,8 @@ void tim_init(void)
     NVIC_InitTypeDef nvic_init;
     nvic_init.NVIC_IRQChannel = TIM2_IRQn;
     nvic_init.NVIC_IRQChannelCmd = ENABLE;
-    nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
-    nvic_init.NVIC_IRQChannelSubPriority = 1;
+    nvic_init.NVIC_IRQChannelPreemptionPriority = 2;
+    nvic_init.NVIC_IRQChannelSubPriority = 2;
     NVIC_Init(&nvic_init);
 
     TIM_ITConfig(TIM2 , TIM_IT_Update , ENABLE);

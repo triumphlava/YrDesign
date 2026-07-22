@@ -2,11 +2,15 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "stdint.h"
+#include "stdlib.h"
+#include "string.h"
 
 uint8_t usart_rx_buffer[128];
 volatile uint8_t usart_rx_index = 0;
 bool usart_rx_complete = false;
-
+// for vision 
+// PA9 -> TX
+// PA10 -> RX
 void usart_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
@@ -30,7 +34,7 @@ void usart_init(void)
     usart_init.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     usart_init.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART1, &usart_init);
-    // // �?��嵌�?向量�?
+    
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     NVIC_InitTypeDef nvic_init;
     nvic_init.NVIC_IRQChannel = USART1_IRQn; 
@@ -46,20 +50,20 @@ void usart_init(void)
 
 int fputc(int ch, FILE *f)
 {
-    // 等待发送数�?��存器为空
+    // 等待发送缓冲区为空
     while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
     USART_SendData(USART1, (uint8_t)ch);
-    
-    // 如果需要等待发送完成（�?��）
-    // while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
     return ch;
 }
 
-
+//  m:2\r\n
+//  FinishLine\r\n
 void USART1_IRQHandler(void)
 {
     if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) != RESET)
     {
+
+
         uint8_t data = USART_ReceiveData(USART1);
         usart_rx_buffer[usart_rx_index] = data;
         usart_rx_index++;
@@ -67,6 +71,7 @@ void USART1_IRQHandler(void)
             usart_rx_complete = true;
     }
 }
+
 
 
 void usart_send_byte(uint8_t data)
@@ -86,6 +91,10 @@ void usart_send_string(const char* str)
     }
 }
 
+
+// for bluetooth debugging
+// PA2 -> TX
+// PA3 -> RX
 void usart2_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -108,7 +117,8 @@ void usart2_init(void)
     usart_init.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     usart_init.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
     USART_Init(USART2, &usart_init);
-    // //?嵌?向量?
+    
+
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
     NVIC_InitTypeDef nvic_init;
     nvic_init.NVIC_IRQChannel = USART2_IRQn; 

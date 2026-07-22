@@ -1,5 +1,8 @@
 ﻿#include "pwm.h"
 
+
+// PA8(TIM1_CH1) PA11(TIM1_CH4)
+// motor pwm init
 void pwm_init(void)
 {
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA |RCC_APB2Periph_TIM1,ENABLE);
