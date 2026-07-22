@@ -4,9 +4,9 @@
 #include "stm32f10x.h"
 
 void pwm_init(void);
-void pwm_set_duty_ch1(uint16_t duty);   /* PA6 鈥?宸﹁疆 */
-void pwm_set_duty_ch2(uint16_t duty);   /* PA7 鈥?鍙宠疆 */
+void pwm_set_duty_ch1(uint16_t duty);   /* PA8 - TIM1_CH1 */
+void pwm_set_duty_ch2(uint16_t duty);   /* PA11 - TIM1_CH4 */
 
-#endif // __PWM_H
+#endif /* __PWM_H */
 
 

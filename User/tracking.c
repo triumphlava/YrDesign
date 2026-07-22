@@ -176,225 +176,226 @@ void tracking_update(void)
         if (right >  100) right = 100;
         if (right < -100) right = -100;
 
-            int16_t left_slow  = SPEED_SLOW + steer;
-            int16_t right_slow = SPEED_SLOW - steer;
-            if (left_slow  >  100) left_slow  = 100;
-            if (left_slow  < -100) left_slow  = -100;
-            if (right_slow >  100) right_slow = 100;
-            if (right_slow < -100) right_slow = -100;
+        int16_t left_slow  = SPEED_SLOW + steer;
+        int16_t right_slow = SPEED_SLOW - steer;
+        if (left_slow  >  100) left_slow  = 100;
+        if (left_slow  < -100) left_slow  = -100;
+        if (right_slow >  100) right_slow = 100;
+        if (right_slow < -100) right_slow = -100;
 
         switch (state)
         {
-
-        /* ===== 空闲 ===== */
-        case IDLE:
-            motor_set_speed(0, 0);
-            led_off();
-            break;
-
-        /* ===== 前进：沿黑线循迹，同时检测路口 ===== */
-        case FWD:
-
-            /* 刚过路口/直行后的300ms稳定期，只循迹不检测新路口 */
-            if (now < timer)
-            {
-                motor_set_speed(left, right);
-                prev_count = sensor_count;
-                break;
-            }
-
-            /* 所有路口已走完 → 进入找病房状态 */
-            if (route[target][path_idx] == PATH_END)
-            {
-                path_idx = 0;
-                timer = now + 1500;  //1500ms 
-                state = FIND_ROOM;
-                prev_count = sensor_count;
-                break;
-            }
-
-            /* 检测到路口（传感器见黑数从少变多，上升沿触发） */
-            if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
-            {
-                uint8_t cmd = route[target][path_idx];
-
-                if (cmd != TURN_STRAIGHT)   /* 需要转弯 */
-                {
-                    timer = now;
-                    state = TURNING;
-                    prev_count = sensor_count;   
-                    break;
-                }
-
-                /* 直行通过路口：步进到下一个路口，加300ms防抖 */
-                path_idx++;
-                timer = now + 1500;
-            }
-
-            motor_set_speed(left, right);
-            prev_count = sensor_count;
-            break;
-        /* ===== 拐弯（去程）：原地旋转90度 ===== */
-        case TURNING:               /* 去程路口拐弯 */
-        {
-            uint8_t cmd = route[target][path_idx];
-            if (cmd == TURN_LEFT)  motor_set_speed(SPEED_NORMAL-TURNING_SPEED, SPEED_NORMAL+TURNING_SPEED);
-            else                   motor_set_speed(SPEED_NORMAL+TURNING_SPEED, SPEED_NORMAL-TURNING_SPEED);
-            
-            if (now - timer >= TURN_TIME)
-            {
-                path_idx++;
-                timer = now;
-                state = FWD;
+            /* ===== 空闲 ===== */
+            case IDLE:
                 motor_set_speed(0, 0);
-            }
-            break;
-        }
-        /* ===== 找病房：慢速前进，等待检测到终点线 ===== */
-        case FIND_ROOM:
-		{
-            if (now < timer)
-            {
-                motor_set_speed(left_slow, right_slow);
-                prev_count = sensor_count;
+                led_off();
                 break;
-            }
 
-            static bool flag = 0;   /* 是否已检测到终点线 */
-            /* 检测到终点线后的300ms：继续慢速前进到线末端 */
-            if (flag == true )
-            {
-                if (now - timer >= 300)
+            /* ===== 前进：沿黑线循迹，同时检测路口 ===== */
+            case FWD:
+
+                /* 刚过路口/直行后的300ms稳定期，只循迹不检测新路口 */
+                if (now < timer)
                 {
-                    flag = 0;
-                    motor_set_speed(0, 0);
-                    
-                    state = PAUSE;
-                    break;
-                }
-            }
-
-            /* 首次检测到终点线，记录时间并继续前进一段 */
-            if (!flag && is_finish_mark())
-            {
-                flag = 1;
-                timer = now;
-                finish_line_detected = 0;  /* 清除标志，防止重复触发 */
-            }
-            
-            motor_set_speed(left_slow, right_slow);  /* 慢速循迹 */
-            break;
-		}
-        /* ===== 到病房：停400ms ===== */
-        case PAUSE:
-            if (now - timer >= PAUSE_MS)
-            { timer = now; state = TURN_BACK; }
-            break;
-
-        /* ===== 掉头180度 ===== */
-        case TURN_BACK:
-            motor_set_speed(-BACK_SPEED, BACK_SPEED);
-            if (now - timer >= BACK_TIME)
-            {
-                motor_set_speed(0, 0);
-                crossed = 0;
-                timer = now + SETTLE_MS;
-                state = RETURN;
-            }
-            finish_line_detected = 0;
-            break;
-
-        /* ===== 返回：原路返回，方向取反 ===== */
-        case RETURN:
-
-            /* 掉头后的稳定期，只循迹不检测路口 */
-            if (now < timer)
-            {
-
-                motor_set_speed(left, right);
-                prev_count = sensor_count;
-                break;
-            }
-
-            /* 最后一个路口之后，清除终点线标志防止误判 */
-            if (crossed == path_len - 1 )
-                finish_line_detected = 0;
-
-            /* ===== 返回终点检测：所有路口已走完，检测起点终点线 ===== */
-            if (crossed >= path_len)
-            {
-                if (is_finish_mark())
-                {
-                    if (!finish_return_flag)
-                    {
-                        /* 第一次检测到终点线，记录时间并持续前进 */
-                        led_on();
-                        finish_return_flag = 1;
-                        finish_timer = now;
-                        motor_set_speed(left, right);
-                    }
-                    else
-                    {
-                        /* 终点线持续300ms */
-                        if (now - finish_timer >= 300)
-                        {
-                            motor_set_speed(0,0);
-                            state = IDLE;
-                            finish_return_flag = 0;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    finish_return_flag = 0;
-                }
-
-                motor_set_speed(left_slow, right_slow);
-                prev_count = sensor_count;
-                break;
-            }
-
-            /* ===== 返回经过路口 ===== */
-            if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
-            {
-                uint8_t fwd_cmd = route[target][path_len - 1 - crossed];
-                uint8_t ret_cmd = reverse_turn(fwd_cmd);
-                crossed++;
-
-                if (ret_cmd != TURN_STRAIGHT) // 要转弯
-                {
-                    timer = now;
-                    state = RET_TURN;
-
+                    motor_set_speed(left, right);
                     prev_count = sensor_count;
                     break;
                 }
-            }
-            prev_count = sensor_count;
-            motor_set_speed(left, right);
-            break;        
-        /* ===== 返回途中拐弯（方向与去的时候相反） ===== */
-        case RET_TURN:              /* 返回途中路口拐弯（方向与去程相反） */
-        {
-            uint8_t fwd_cmd = route[target][path_len - 1 - (crossed - 1)];
-            uint8_t ret_cmd = reverse_turn(fwd_cmd);
 
-            if (ret_cmd == TURN_LEFT)  motor_set_speed(SPEED_NORMAL-TURNING_SPEED, SPEED_NORMAL+TURNING_SPEED);
-            else                       motor_set_speed(SPEED_NORMAL+TURNING_SPEED, SPEED_NORMAL-TURNING_SPEED);
+                /* 所有路口已走完 → 进入找病房状态 */
+                if (route[target][path_idx] == PATH_END)
+                {
+                    path_idx = 0;
+                    timer = now + 1500;  //1500ms 
+                    state = FIND_ROOM;
+                    prev_count = sensor_count;
+                    break;
+                }
 
-            if (now - timer >= TURN_TIME)
+                /* 检测到路口（传感器见黑数从少变多，上升沿触发） */
+                if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
+                {
+                    uint8_t cmd = route[target][path_idx];
+
+                    if (cmd != TURN_STRAIGHT)   /* 需要转弯 */
+                    {
+                        timer = now;
+                        state = TURNING;
+                        prev_count = sensor_count;   
+                        break;
+                    }
+
+                    /* 直行通过路口：步进到下一个路口，加300ms防抖 */
+                    path_idx++;
+                    timer = now + 1500;
+                }
+
+                motor_set_speed(left, right);
+                prev_count = sensor_count;
+                break;
+            /* ===== 拐弯（去程）：原地旋转90度 ===== */
+            case TURNING:               /* 去程路口拐弯 */
             {
-                timer = (crossed == path_len) ? now + 1500 : now;
-                state = RETURN;
-                motor_set_speed(0, 0);
+                uint8_t cmd = route[target][path_idx];
+                if (cmd == TURN_LEFT)  motor_set_speed(SPEED_NORMAL-TURNING_SPEED, SPEED_NORMAL+TURNING_SPEED);
+                else                   motor_set_speed(SPEED_NORMAL+TURNING_SPEED, SPEED_NORMAL-TURNING_SPEED);
+                
+                if (now - timer >= TURN_TIME)  // 转弯时间
+                {
+                    path_idx++;
+                    timer = now;
+                    state = FWD;
+                    motor_set_speed(0, 0);
+                }
+                break;
             }
-            break;
-        }
+            /* ===== 找病房：慢速前进，等待检测到终点线 ===== */
+            case FIND_ROOM:
+            {
+                //  五六七八病房由于T字路口之后有直黑线，可能识别成终点线
+                //  这里延时是为了让小车完全到达直线
+                if (now < timer)
+                {
+                    motor_set_speed(left_slow, right_slow);
+                    prev_count = sensor_count;
+                    break;
+                }
 
-        default:
-            motor_set_speed(0, 0);
-            break;
+                static bool flag = 0;   /* 是否已检测到终点线 */
+                /* 检测到终点线后的300ms：继续慢速前进到线末端 */
+                if (flag == true )
+                {
+                    if (now - timer >= 300)
+                    {
+                        flag = 0;
+                        motor_set_speed(0, 0);
+                        
+                        state = PAUSE;
+                        break;
+                    }
+                }
+
+                /* 首次检测到终点线，记录时间并继续前进一段 */
+                if (!flag && is_finish_mark())
+                {
+                    flag = 1;
+                    timer = now;
+                    finish_line_detected = 0;  /* 清除标志，防止重复触发 */
+                }
+                
+                motor_set_speed(left_slow, right_slow);  /* 慢速循迹 */
+                break;
+            }
+            /* ===== 到病房：停400ms ===== */
+            case PAUSE:
+                if (now - timer >= PAUSE_MS)
+                { timer = now; state = TURN_BACK; }
+                break;
+
+            /* ===== 掉头180度 ===== */
+            case TURN_BACK:
+                motor_set_speed(-BACK_SPEED, BACK_SPEED);
+                if (now - timer >= BACK_TIME)
+                {
+                    motor_set_speed(0, 0);
+                    crossed = 0;
+                    timer = now + SETTLE_MS;
+                    state = RETURN;
+                }
+                finish_line_detected = 0;
+                break;
+
+            /* ===== 返回：原路返回，方向取反 ===== */
+            case RETURN:
+
+                /* 掉头后的稳定期，只循迹不检测路口 */
+                if (now < timer)
+                {
+
+                    motor_set_speed(left, right);
+                    prev_count = sensor_count;
+                    break;
+                }
+
+                /* 最后一个路口之后，清除终点线标志防止误判 */
+                if (crossed == path_len - 1 )
+                    finish_line_detected = 0;
+
+                /* ===== 返回终点检测：所有路口已走完，检测起点终点线 ===== */
+                if (crossed >= path_len)
+                {
+                    if (is_finish_mark())
+                    {
+                        if (!finish_return_flag)
+                        {
+                            /* 第一次检测到终点线，记录时间并持续前进 */
+                            led_on();
+                            finish_return_flag = 1;
+                            finish_timer = now;
+                            motor_set_speed(left, right);
+                        }
+                        else
+                        {
+                            /* 终点线持续300ms */
+                            if (now - finish_timer >= 300)
+                            {
+                                motor_set_speed(0,0);
+                                state = IDLE;
+                                finish_return_flag = 0;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        finish_return_flag = 0;
+                    }
+
+                    motor_set_speed(left_slow, right_slow);
+                    prev_count = sensor_count;
+                    break;
+                }
+
+                /* ===== 返回经过路口 ===== */
+                if (sensor_count >= JUNCTION_CNT && prev_count < JUNCTION_CNT)
+                {
+                    uint8_t fwd_cmd = route[target][path_len - 1 - crossed];
+                    uint8_t ret_cmd = reverse_turn(fwd_cmd);
+                    crossed++;
+
+                    if (ret_cmd != TURN_STRAIGHT) // 要转弯
+                    {
+                        timer = now;
+                        state = RET_TURN;
+
+                        prev_count = sensor_count;
+                        break;
+                    }
+                }
+                prev_count = sensor_count;
+                motor_set_speed(left, right);
+                break;        
+            /* ===== 返回途中拐弯（方向与去的时候相反） ===== */
+            case RET_TURN:              /* 返回途中路口拐弯（方向与去程相反） */
+            {
+                uint8_t fwd_cmd = route[target][path_len - 1 - (crossed - 1)];
+                uint8_t ret_cmd = reverse_turn(fwd_cmd);
+
+                if (ret_cmd == TURN_LEFT)  motor_set_speed(SPEED_NORMAL-TURNING_SPEED, SPEED_NORMAL+TURNING_SPEED);
+                else                       motor_set_speed(SPEED_NORMAL+TURNING_SPEED, SPEED_NORMAL-TURNING_SPEED);
+
+                if (now - timer >= TURN_TIME)
+                {
+                    timer = (crossed == path_len) ? now + 1500 : now;
+                    state = RETURN;
+                    motor_set_speed(0, 0);
+                }
+                break;
+            }
+
+            default:
+                motor_set_speed(0, 0);
+                break;
         }
     }
 }
